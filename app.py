@@ -11,6 +11,7 @@ engine = create_async_engine(PG_DSN)
 
 Session = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
+
 @web.middleware
 async def session_middleware(request: web.Request,
                              handler: Callable[[web.Request],
@@ -45,8 +46,12 @@ class Users(web.View):
     async def post(self):
         user_data = await self.request.json()
         user_data['password'] = hash_password(user_data['password'])
-
-        return web.json_response({})
+        new_user = User(**user_data)
+        self.request['session'].add(new_user)
+        await self.request['session'].commit()
+        return web.json_response({
+            'id': new_user.id
+        })
 
     async def patch(self):
         return web.json_response({})
