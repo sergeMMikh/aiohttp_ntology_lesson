@@ -17,17 +17,19 @@ class ApiError(Exception):
 def basic_request(method: Literal['get', 'post', 'patch', 'delete'], path: str, **kwargs) -> dict:
     method = getattr(session, method)
 
-    response = method(f'{API_URL}/{path}', **kwargs)
+    path = f'{API_URL}/{path}'
 
-    if response.starus_code >= 400:
+    response = method(path, **kwargs)
+
+    if response.status_code >= 400:
         try:
             message = response.json()
         except json.JSONDecodeError:
             message = response.text
-        raise ApiError(response.starus_code, message)
+        raise ApiError(response.status_code, message)
 
     return response.json()
 
 
 def create_user(name: str, password: str):
-    return basic_request('post', '/users/', json={'name': name, 'password': password})
+    return basic_request('post', 'users/', json={'name': name, 'password': password})

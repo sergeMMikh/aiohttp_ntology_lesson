@@ -39,7 +39,7 @@ async def login(request: web.Request):
     return web.json_response({})
 
 
-class Users(web.View):
+class UsersView(web.View):
     async def get(self):
         return web.json_response({})
 
@@ -62,6 +62,10 @@ class Users(web.View):
 
 app = web.Application(middlewares=[session_middleware, ])
 app._cleanup_ctx.append(app_context)
+
+app.add_routes([
+    web.post('/users/', UsersView)
+])
 
 if __name__ == '__main__':
     web.run_app(app, port=8080)
