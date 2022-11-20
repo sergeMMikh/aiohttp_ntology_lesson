@@ -31,6 +31,10 @@ class Users(web.View):
         return web.json_response({})
 
     async def post(self):
+        user_data = await self.request.json()
+        user_data
+
+
         return web.json_response({})
 
     async def patch(self):
