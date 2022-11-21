@@ -1,3 +1,5 @@
+import json
+
 from aiohttp import web
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
@@ -35,13 +37,34 @@ async def app_context(app: web.Application):
     print("FINISH")
 
 
+def raise_error(exception_class, message):
+    raise exception_class(
+        text=json.dumps({'status': 'error',
+                        'message': message}),
+        content_type='application/json'
+    )
+
+
+async def get_orm_item(orm_class, object_id, session):
+    item = await session.get(orm_class, object_id)
+    if item is None:
+        raise raise_error(web.HTTPNotFound,
+                          f'{orm_class.__name__} not found')
+    return item
+
+
 async def login(request: web.Request):
     return web.json_response({})
 
 
 class UsersView(web.View):
     async def get(self):
-        return web.json_response({})
+        user_id = int(self.request.match_info['user_id'])
+        user = await get_orm_item(User, user_id, self.request['session'])
+        return web.json_response({
+            'id': user.id,
+            'name': user.name
+        })
 
     async def post(self):
         user_data = await self.request.json()
@@ -64,7 +87,8 @@ app = web.Application(middlewares=[session_middleware, ])
 app._cleanup_ctx.append(app_context)
 
 app.add_routes([
-    web.post('/users/', UsersView)
+    web.post('/users/', UsersView),
+    web.get('/users/{user_id:\d+}', UsersView),
 ])
 
 if __name__ == '__main__':

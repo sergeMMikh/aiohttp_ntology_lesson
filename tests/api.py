@@ -33,3 +33,7 @@ def basic_request(method: Literal['get', 'post', 'patch', 'delete'], path: str, 
 
 def create_user(name: str, password: str):
     return basic_request('post', 'users/', json={'name': name, 'password': password})
+
+
+def get_user(user_id):
+    return basic_request('get', f'users/{user_id}')
