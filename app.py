@@ -95,7 +95,11 @@ class UsersView(web.View):
         return web.json_response({"status": "success"})
 
     async def delete(self):
-        return web.json_response({})
+        user_id = int(self.request.match_info['user_id'])
+        user = await get_orm_item(User, user_id, self.request['session'])
+        await self.request['session'].delete(user)
+        await self.request['session'].commit()
+        return web.json_response({"status": "success"})
 
 
 app = web.Application(middlewares=[session_middleware, ])
@@ -105,6 +109,7 @@ app.add_routes([
     web.post('/users/', UsersView),
     web.get('/users/{user_id:\d+}', UsersView),
     web.patch('/users/{user_id:\d+}', UsersView),
+    web.delete('/users/{user_id:\d+}', UsersView),
 ])
 
 if __name__ == '__main__':
