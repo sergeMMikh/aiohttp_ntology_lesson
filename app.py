@@ -3,6 +3,7 @@ import json
 from aiohttp import web
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
+from sqlalchemy.future import select
 from typing import Callable, Awaitable
 
 from config import PG_DSN
@@ -56,7 +57,19 @@ async def get_orm_item(orm_class, object_id, session):
 
 
 async def login(request: web.Request):
-    return web.json_response({})
+    user_data = await request.json()
+    query = select(User).where(User.name == user_data["name"])
+    result = await request["session"].execute(query)
+    user = result.scalar()
+    if not user or not check_password(user_data["password"], user.password):
+        raise raise_error(web.HTTPUnauthorized,
+                          message='user or password is incorrect')
+
+    token = Token(user=user)
+    request["session"].add(token)
+    await request["session"].commit()
+
+    return web.json_response({"token": str(token.id)})
 
 
 class UsersView(web.View):
@@ -106,6 +119,7 @@ app = web.Application(middlewares=[session_middleware, ])
 app._cleanup_ctx.append(app_context)
 
 app.add_routes([
+    web.post("/login", login),
     web.post('/users/', UsersView),
     web.get('/users/{user_id:\d+}', UsersView),
     web.patch('/users/{user_id:\d+}', UsersView),

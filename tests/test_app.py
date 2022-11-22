@@ -58,3 +58,11 @@ def test_delete_user(new_user):
     assert err_info.value.status_code == 404
     assert err_info.value.message == {'status': 'error',
                                       'message': 'User not found'}
+
+
+def test_login(new_user):
+    token = api.login(new_user['name'], new_user['password'])['token']
+
+    print(f'token: {token}')
+
+    # assert token is not None
