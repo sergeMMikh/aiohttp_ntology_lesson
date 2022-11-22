@@ -40,7 +40,7 @@ async def app_context(app: web.Application):
 def raise_error(exception_class, message):
     raise exception_class(
         text=json.dumps({'status': 'error',
-                        'message': message}),
+                         'message': message}),
         content_type='application/json'
     )
 
@@ -77,6 +77,19 @@ class UsersView(web.View):
         })
 
     async def patch(self):
+        user_id = int(self.request.match_info['user_id'])
+        user = await get_orm_item(User, user_id, self.request['session'])
+        user_data = await self.request.json()
+
+        if 'password' in user_data:
+            user_data['password'] = hash_password(user_data['password'])
+
+        for field, value in user_data.items:
+            setattr(user, field, value)
+
+        self.request['session'].add(user)
+        await self.request['session'].commit()
+
         return web.json_response({})
 
     async def delete(self):
@@ -89,6 +102,7 @@ app._cleanup_ctx.append(app_context)
 app.add_routes([
     web.post('/users/', UsersView),
     web.get('/users/{user_id:\d+}', UsersView),
+    web.patch('/users/{user_id:\d+}', UsersView),
 ])
 
 if __name__ == '__main__':

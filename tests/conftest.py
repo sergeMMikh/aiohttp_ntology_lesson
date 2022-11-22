@@ -1,4 +1,5 @@
 import pytest
+import time
 from models import Base, User
 from config import PG_HOST, PG_USER, PG_DB, PG_PORT, PG_PASSWORD
 
@@ -21,6 +22,19 @@ def cleanup_database():
 def root_user():
     with Session() as session:
         new_user = User(name='root', password='toor')
+        session.add(new_user)
+        session.commit()
+        return {
+            'id': new_user.id,
+            'name': new_user.name,
+            'password': new_user.password
+        }
+
+
+@pytest.fixture(scope='session')
+def new_user():
+    with Session() as session:
+        new_user = User(name=f'new_user_{time.time()}', password='1234')
         session.add(new_user)
         session.commit()
         return {

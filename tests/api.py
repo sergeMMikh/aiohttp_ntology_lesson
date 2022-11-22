@@ -9,7 +9,7 @@ session = requests.Session()
 
 class ApiError(Exception):
 
-    def __init__(self, status_code: int, message: dict | str):
+    def __init__(self, status_code: int, message: dict or str):
         self.status_code = status_code
         self.message = message
 
@@ -37,3 +37,7 @@ def create_user(name: str, password: str):
 
 def get_user(user_id):
     return basic_request('get', f'users/{user_id}')
+
+
+def patch_user(user_id: int, patch: dict):
+    return basic_request('patch', f'users/{user_id}', json=patch)
