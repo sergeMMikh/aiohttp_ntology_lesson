@@ -9,6 +9,8 @@ from config import PG_DSN
 from models import Base, User, Token
 from auth import hash_password, check_password
 
+from pprint import pprint
+
 engine = create_async_engine(PG_DSN)
 
 Session = sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
@@ -84,13 +86,13 @@ class UsersView(web.View):
         if 'password' in user_data:
             user_data['password'] = hash_password(user_data['password'])
 
-        for field, value in user_data.items:
+        for field, value in user_data.items():
             setattr(user, field, value)
 
         self.request['session'].add(user)
         await self.request['session'].commit()
 
-        return web.json_response({})
+        return web.json_response({"status": "success"})
 
     async def delete(self):
         return web.json_response({})

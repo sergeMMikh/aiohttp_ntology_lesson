@@ -31,7 +31,8 @@ def test_user_non_existed():
     assert err_info.value.message == {'status': 'error',
                                       'message': 'User not found'}
 
+
 def test_patch_user(new_user):
     api.patch_user(new_user['id'], {'name': 'patched_name'})
     user = api.get_user(new_user['id'])
-    assert new_user['name'] == 'patched_name'
+    assert user['name'] == 'patched_name'

@@ -31,7 +31,7 @@ def root_user():
         }
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture()
 def new_user():
     with Session() as session:
         new_user = User(name=f'new_user_{time.time()}', password='1234')
