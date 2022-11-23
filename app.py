@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from aiohttp import web
@@ -6,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSessio
 from sqlalchemy.future import select
 from typing import Callable, Awaitable
 
-from config import PG_DSN
+from config import PG_DSN, TOKEN_TTL
 from models import Base, User, Token
 from auth import hash_password, check_password
 
@@ -38,6 +39,27 @@ async def app_context(app: web.Application):
     yield
     await engine.dispose()
     print("FINISH")
+
+
+async def check_auth(request: web.Request):
+    token_id = request.headers.get('token')
+
+    if not token_id:
+        raise_error(web.HTTPForbidden, message='token is incorrect')
+
+    try:
+        token = await get_orm_item(Token, token_id, request['session'])
+
+    except web.HTTPNotFound:
+        raise_error(web.HTTPForbidden, message='token is incorrect')
+    if token.created + datetime.timedelta(seconds=TOKEN_TTL) <= datetime.datetime.now():
+        raise_error(web.HTTPForbidden, message='token is incorrect')
+    request['token'] = token
+
+
+async def check_owner(request: web.Request, owner_id: int):
+    if request['token'].user_id != owner_id:
+        raise_error(web.HTTPForbidden, message='token is incorrect')
 
 
 def raise_error(exception_class, message):
@@ -108,7 +130,9 @@ class UsersView(web.View):
         return web.json_response({"status": "success"})
 
     async def delete(self):
+        await check_auth(self.request)
         user_id = int(self.request.match_info['user_id'])
+        await check_owner(self.request, user_id)
         user = await get_orm_item(User, user_id, self.request['session'])
         await self.request['session'].delete(user)
         await self.request['session'].commit()
